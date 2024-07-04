@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="ee_peg">
+    <static>false</static>
+    <pose>0 0 0 0 0 0</pose>
+    <link name="ee_peg_body">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>1000</mass>
+        <inertia>
+          <ixx>1.0</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>1.0</iyy>
+          <iyz>0.0</iyz>
+          <izz>1.0</izz>
+        </inertia>
+      </inertial>
+      <visual name="ft_visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>ee_ft_asm.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.5 0.5 0.5 1.0</diffuse>
+        </material>
+      </visual>
+      <!-- <collision name="ft_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>ee_ft_asm.obj</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+
+       <!-- <visual name="peg_visual">
+        <pose>0 0 0.046399 3.141592 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>peg_tool_105mm.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>1 1 0.0 1.0</diffuse>
+        </material>
+      </visual> -->
+      <visual name="peg_visual">
+        <pose>0 0 0.098899 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.105</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>1 1 0.0 1.0</diffuse>
+        </material>
+      </visual>
+
+      <collision name="peg_collision">
+        <!-- <pose>0 0 0.0 0 0 0</pose> -->
+        <pose>0 0 0.098899 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.105</length>
+          </cylinder>
+        </geometry>
+        <drake:proximity_properties>
+          <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>1e7</drake:hydroelastic_modulus>
+          <drake:mesh_resolution_hint>0.1</drake:mesh_resolution_hint>
+          <drake:mu_dynamic>0.5</drake:mu_dynamic>
+          <drake:hunt_crossley_dissipation>10</drake:hunt_crossley_dissipation>
+        </drake:proximity_properties>
+      </collision>
+
+    </link>
+
+    <frame name="ee_peg_top_center">
+      <pose relative_to="ee_peg_body">0 0 0 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>

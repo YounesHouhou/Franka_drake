@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="hole">
+    <static>false</static>
+    <pose>0 0 0 0 0 0</pose>
+    <link name="hole_body">
+      <inertial>
+        <mass>1000</mass>
+        <inertia>
+          <ixx>1.0</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>1.0</iyy>
+          <iyz>0.0</iyz>
+          <izz>1.0</izz>
+        </inertia>
+      </inertial>
+    
+      <visual name="hole_visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>30mm_hole_good.obj</uri>
+            <!-- <scale>0.0015 0.0015 0.0015</scale> -->
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.5 0.5 0.5 1.0</diffuse>
+        </material>
+      </visual>
+      <!-- <visual name="pipe_visual">
+        <pose>0 0.15 0 1.5796 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.025</radius>
+            <length>0.3</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0.7 0.27 0 1.0</diffuse>
+        </material>
+      </visual> -->
+
+      <collision name="hole_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>30mm_hole_good.obj</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <drake:proximity_properties>
+          <drake:rigid_hydroelastic/>
+          <!-- <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>5.0e4</drake:hydroelastic_modulus> -->
+          <drake:mu_dynamic>0.1</drake:mu_dynamic>
+          <drake:hunt_crossley_dissipation>20</drake:hunt_crossley_dissipation>
+        </drake:proximity_properties>
+      </collision>
+
+    </link>
+    <frame name="hole_bottom_center">
+      <pose relative_to="hole_body">0 0 0 -1.570796 0 0</pose>
+    </frame>
+  </model>
+</sdf>
