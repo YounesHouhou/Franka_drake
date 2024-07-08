@@ -26,7 +26,8 @@ def AddFranka(plant):
     plant.set_gravity_enabled(peg_model, False)
 
     hole_model = parser.AddModels("../drake_pih_sim/model/hole/30mm_hole.sdf")[0]
-    W_X_HOLE = RigidTransform(p=np.array([0.51794014, 0.01935995, -0.012]))
+    #W_X_HOLE = RigidTransform(p=np.array([0.51794014, 0.01935995, -0.012]))
+    W_X_HOLE = RigidTransform(p=np.array([0.01935995, -0.51794014, -0.012]))
     plant.WeldFrames(plant.world_frame(), plant.GetFrameByName("hole_bottom_center"), W_X_HOLE)
 
 
@@ -36,14 +37,25 @@ def AddFranka(plant):
 class RewardSystem(LeafSystem):
     def __init__(self):
         LeafSystem.__init__(self)
-        self.DeclareVectorInputPort("body_state", 14)
+    
+        self.DeclareAbstractInputPort("body_poses_input", AbstractValue.Make([RigidTransform()]*12)) # List composed of all rigid transform body
         self.DeclareVectorInputPort("actions", 1)
         self.DeclareVectorOutputPort("reward", 1, self.CalcReward)
 
     def CalcReward(self, context, output):
-        panda_state = self.get_input_port(0).Eval(context)
+        body_poses = self.get_input_port(0).Eval(context)
         actions = self.get_input_port(1).Eval(context)
-        output[0] = 0 
+
+        HOLE_p=np.array([0.01935995,-0.51794014, -0.012])
+        peg_pos= body_poses[10] # 10 = index of peg body
+
+        dist= np.linalg.norm(HOLE_p- peg_pos.translation())
+
+        if dist <= 0.1: reward=100
+        elif dist > 0.1: reward= 5/dist
+        else: reward=0
+        
+        output[0] = reward
 
 #LeafSystem that uses the chosen action and the current end effector (EE) position 
 #as inputs to compute a new target cartesian position for the end effector, performing a translation based on the chosen action.
@@ -125,10 +137,11 @@ def make_franka_move(meshcat=None):
     builder.ExportOutput(plant.get_state_output_port(), "observations")
 
     reward = builder.AddSystem(RewardSystem())
+    reward.set_name("reward_system")
     transform = builder.AddSystem(TransformSystem())
     transform.set_name("transform")
 
-    builder.Connect(plant.get_state_output_port(panda_model), reward.get_input_port(0))
+    builder.Connect(plant.get_body_poses_output_port(), reward.get_input_port(0))
     builder.Connect(actions.get_output_port(), reward.get_input_port(1))
     builder.Connect(actions.get_output_port(), transform.get_input_port(0))
     builder.Connect(transform.get_output_port(),franka_ik_solver.get_input_port(0)) #
@@ -156,6 +169,7 @@ def make_franka_move(meshcat=None):
     
     plant.SetDefaultPositions(q0) #Fix default pos to handle potential issue with franka ik solver
     diagram.ForcedPublish(context)
+    #simulator.set_target_realtime_rate(2.0)
 
     return simulator
 
@@ -197,6 +211,34 @@ def make_Franka_env(meshcat=None):
         
         plant.SetPositions(plant_context, initial_positions)
         plant.SetVelocities(plant_context, initial_velocities)
+    
+    def termination_condition(simulator):
+
+
+        context = simulator.get_context()
+        reward_system = simulator.get_system().GetSubsystemByName("reward_system")
+        reward_context = reward_system.GetMyMutableContextFromRoot(context)
+        reward_output = int(reward_system.get_output_port().Eval(reward_context))
+
+        if reward_output == 100:
+
+            return EventStatus.Succeeded()
+    
+
+    def monitor_function(context: Context) -> EventStatus:
+        # Exemple: Accéder au temps global de la simulation
+        current_time = context.get_time()
+
+        reward_system = simulator.get_system().GetSubsystemByName("reward_system")
+        reward_context = reward_system.GetMyContextFromRoot(context)
+        reward_output = reward_system.get_output_port().Eval(reward_context)
+
+        #print("Reward :",reward_output.item())
+        #print("test:",EventStatus.ReachedTermination(simulator.get_system(),"Condition atteinte"))
+        if reward_output.item() >100: #Set your desired termination
+            #return EventStatus.Succeeded()
+            return EventStatus.ReachedTermination(simulator.get_system(),"Termination Condition Reached") # Set "terminated" variable in the step fct to TRUE
+          
 
     env = DrakeGymEnv(
         simulator=simulator,
@@ -208,6 +250,8 @@ def make_Franka_env(meshcat=None):
         observation_port_id="observations",
         reset_handler=custom_reset_handler
     )
+
+    env.simulator.set_monitor(monitor_function)
     
     return env
 
